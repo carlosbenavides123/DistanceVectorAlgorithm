@@ -33,11 +33,17 @@ routing-update-interval: It specifies the time interval between routing updates 
 port and server-id: They are written in the topology file. The server should find its port and
 server-id in the topology file without changing the entry format or adding any new entries.
 
+python ./server.py -t lol.txt -i 2
+
 todo:
 
 <!-- make the 
 server -t <topology-file-name> -i <routing-update-interval>
 functionality work -->
 
-be able to parse and use the topology file
-use the timer to update the server state every <interval> time
+<!-- be able to parse and use the topology file
+use the timer to update the server state every <interval> time -->
+
+need to figure out how to get self ip and port for own server without modifying the topo conf a lot
+<!-- add shell to run continuos commands -->
+
