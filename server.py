@@ -4,6 +4,8 @@ import os.path
 import os
 import sys
 import threading
+import socket
+import collections
 
 from os import path
 
@@ -11,14 +13,25 @@ class Server(cmd.Cmd):
 	def __init__(self, topology, interval):
 		cmd.Cmd.__init__(self)
 		self.prompt = ">> "
-		self.intro = "Welcome to Chat Application!"
+
+		self.server_ip = socket.gethostbyname(socket.gethostname())
+		if self.server_ip == "127.0.0.1":
+			try:
+				self.server_ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0]
+			except Exception:
+				print("Was not able to find a valid client ip...")
+
+		self.server_id = 0
+		self.server_port = 0
+
+		self.graph = collections.defaultdict(list)
 
 		self.topology = topology
 		self.interval = interval
 
-		self.neighbor_details = []
+		self.all_server_details = []
 		self.amount_of_servers = 0
-		self.amount_of_neighbors = len(self.neighbor_details)
+		self.amount_of_neighbors = len(self.all_server_details)
 
 		self.read_topology_conf()
 		self.update_topology_file_conf()
@@ -44,40 +57,61 @@ class Server(cmd.Cmd):
 	def do_exit(self, line):
 		return -1
 
+	def do_debug(self, line):
+		print(f"server_id {self.server_id}, server_port {self.server_port}, amt_of_servers {self.amount_of_servers}, amt_of_nei {self.amount_of_neighbors}, nei details {self.all_server_details}, graph {self.graph}")
+
 	def read_topology_conf(self):
 		count = 0
+		all_server_details = []
+		graph = collections.defaultdict(list)
+
 		with open(self.topology) as fp:
 			for line in fp:
 				line = line.replace('\n','')
+				line = line.strip()
 				if count == 0:
 					self.amount_of_servers = int(line)
 				elif count == 1:
 					self.amount_of_neighbors = int(line)
-				elif line != '':
-					server_id, server_ip, port = line.split(" ")
-					self.neighbor_details.append((server_id, server_ip, port))
+				elif line != '' and len(line.split(" ")) == 3:
+					# differentiate the line of server id and ip, port pair
+					# and the server id, neighbor id, and cost line
+					server_id, val_pos_2, val_pos_3 = line.split(" ")
+					# server id, ip and port pair
+					if len(val_pos_2) > 2:
+						server_ip = val_pos_2
+						server_port = val_pos_3
+						# get the server's data
+						# otherwise append/update the neighbor details
+						if server_ip == self.server_ip:
+							self.server_id = server_id
+							self.server_port = server_port
+						all_server_details.append((server_id, server_ip, server_port))
+					else:
+						# server id, neighbor id, and cost
+						neighbor_server_id = val_pos_2
+						cost = val_pos_3
+						graph[server_id].append((neighbor_server_id, cost))
 				count += 1
+
+		# update the state variables
+		self.all_server_details = all_server_details
+		self.graph = graph
 
 	def update_topology_file_conf(self):
 		f = open(self.topology, "w+")
 		f.writelines(f"{self.amount_of_servers}\n")
 		f.writelines(f"{self.amount_of_neighbors}\n")
-		for nei in self.neighbor_details:
+		for nei in self.all_server_details:
 			f.writelines(" ".join(map(str, nei)) + "\n")
+		for node in self.graph:
+			for nei, cost in self.graph[node]:
+				f.writelines(str(node) + " " + str(nei) + " " + str(cost) + "\n")
 		f.close()
 
 	def cron_update_topology_state(self):
 		threading.Timer(self.interval, self.cron_update_topology).start()
 		print("im called!")
-
-	# def parse_topology_conf(self):
-	# 	with open(self.topology) as fp:
-	# 		line = fp.readline()
-	# 		while line:
-	# 			print(line.strip())
-
-	# def write_to_topology_conf(self):
-	# 	with open(self.topology) as fp:
 
 def check_positive_interval(interval):
 	try: 

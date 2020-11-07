@@ -44,6 +44,8 @@ functionality work -->
 <!-- be able to parse and use the topology file
 use the timer to update the server state every <interval> time -->
 
-need to figure out how to get self ip and port for own server without modifying the topo conf a lot
+<!-- need to figure out how to get self ip and port for own server without modifying the topo conf a lot -->
 <!-- add shell to run continuos commands -->
+
+create bellman ford algorithm, using the graph? or all_server_details? not sure yet
 
