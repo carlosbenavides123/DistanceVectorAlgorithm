@@ -7,6 +7,9 @@ import threading
 import socket
 import collections
 
+# UDFs
+from bellman_ford import bellman_ford
+
 from os import path
 
 class Server(cmd.Cmd):
@@ -34,10 +37,11 @@ class Server(cmd.Cmd):
 		self.amount_of_neighbors = len(self.all_server_details)
 
 		self.read_topology_conf()
-		self.update_topology_file_conf()
+		# self.update_topology_file_conf()
 
 	def do_update(self, line):
 		print("do update")
+		self.graph = bellman_ford(self.graph, self.server_id)
 
 	def do_step(self, line):
 		print("do step")
@@ -58,7 +62,7 @@ class Server(cmd.Cmd):
 		return -1
 
 	def do_debug(self, line):
-		print(f"server_id {self.server_id}, server_port {self.server_port}, amt_of_servers {self.amount_of_servers}, amt_of_nei {self.amount_of_neighbors}, nei details {self.all_server_details}, graph {self.graph}")
+		print(f"server_id {self.server_id} \nserver_port {self.server_port} \namt_of_servers {self.amount_of_servers} \namt_of_nei {self.amount_of_neighbors} \nnei details {self.all_server_details} \ngraph {self.graph}")
 
 	def read_topology_conf(self):
 		count = 0
@@ -77,6 +81,7 @@ class Server(cmd.Cmd):
 					# differentiate the line of server id and ip, port pair
 					# and the server id, neighbor id, and cost line
 					server_id, val_pos_2, val_pos_3 = line.split(" ")
+					server_id = int(server_id)
 					# server id, ip and port pair
 					if len(val_pos_2) > 2:
 						server_ip = val_pos_2
@@ -89,9 +94,10 @@ class Server(cmd.Cmd):
 						all_server_details.append((server_id, server_ip, server_port))
 					else:
 						# server id, neighbor id, and cost
-						neighbor_server_id = val_pos_2
-						cost = val_pos_3
+						neighbor_server_id = int(val_pos_2)
+						cost = int(val_pos_3)
 						graph[server_id].append((neighbor_server_id, cost))
+						graph[neighbor_server_id].append((server_id, cost))
 				count += 1
 
 		# update the state variables
