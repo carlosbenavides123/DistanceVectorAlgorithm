@@ -8,7 +8,7 @@ import socket
 import collections
 
 # UDFs
-from bellman_ford import bellman_ford
+from bellman_ford import bellman_ford, update_routing_table
 
 from os import path
 
@@ -27,7 +27,7 @@ class Server(cmd.Cmd):
 		self.server_id = 0
 		self.server_port = 0
 
-		self.graph = collections.defaultdict(list)
+		self.graph = collections.defaultdict(dict)
 
 		self.topology = topology
 		self.interval = interval
@@ -42,6 +42,18 @@ class Server(cmd.Cmd):
 	def do_update(self, line):
 		print("do update")
 		self.graph = bellman_ford(self.graph, self.server_id)
+
+	# simulate retrieving node 3 giving server 1 an update
+	def do_simulate_rtv(self, line):
+		print("receiving data from node 3...")
+		node_3_simulation_data = {3: {1: 3, 2: 1, 4: 7}}
+		update_routing_table(self.graph, self.server_id, node_3_simulation_data)
+
+	def do_simulate_send(self, line):
+		print("sending data to node 4...")
+		src_vector = self.graph[self.server_id]
+		print(src_vector, "src vect")
+		update_routing_table(self.graph, 4, {self.server_id: src_vector})
 
 	def do_step(self, line):
 		print("do step")
@@ -67,7 +79,7 @@ class Server(cmd.Cmd):
 	def read_topology_conf(self):
 		count = 0
 		all_server_details = []
-		graph = collections.defaultdict(list)
+		graph = collections.defaultdict(dict)
 
 		with open(self.topology) as fp:
 			for line in fp:
@@ -96,8 +108,10 @@ class Server(cmd.Cmd):
 						# server id, neighbor id, and cost
 						neighbor_server_id = int(val_pos_2)
 						cost = int(val_pos_3)
-						graph[server_id].append((neighbor_server_id, cost))
-						graph[neighbor_server_id].append((server_id, cost))
+						if cost == -1:
+							cost = float("inf")
+						graph[server_id].update({neighbor_server_id: cost})
+						graph[neighbor_server_id].update({server_id: cost})
 				count += 1
 
 		# update the state variables
