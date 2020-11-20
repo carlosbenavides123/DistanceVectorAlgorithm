@@ -33,7 +33,11 @@ routing-update-interval: It specifies the time interval between routing updates 
 port and server-id: They are written in the topology file. The server should find its port and
 server-id in the topology file without changing the entry format or adding any new entries.
 
-python ./server.py -t lol.txt -i 2
+python ./server.py -t server_1.txt -i 2
+
+python ./server.py -t server_2.txt -i 2
+
+python ./server.py -t server_3.txt -i 2
 
 todo:
 

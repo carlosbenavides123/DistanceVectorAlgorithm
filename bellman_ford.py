@@ -1,10 +1,11 @@
 import collections
 
-# -1 error
-# 0 success
+# def merge_two_dicts(x, y):
+#     z = x.copy()   # start with x's keys and values
+#     z.update(y)    # modifies z with y's keys and values & returns None
+#     return z
+
 def update_routing_table(graph, src_server_id, src_nei_vector):
-    print(graph)
-    print("----")
     src_nei_key = None
     for key in src_nei_vector:
         src_nei_key = key
@@ -31,9 +32,6 @@ def update_routing_table(graph, src_server_id, src_nei_vector):
         # raise error
         print("error src_to_nei_cost float inf")
         return -1
-    print("src vect ", src_vector)
-    print("nei vect ", nei_vector)
-    print("new_min_src_vector ", new_min_src_vector)
 
     src_vector_keys = set([key for key in src_vector])
 
@@ -52,10 +50,10 @@ def update_routing_table(graph, src_server_id, src_nei_vector):
                         new_min_src_vector[src_vector_nei] = src_vector_nei_cost
                     break
 
+    # new_min_src_vector = merge_two_dicts(src_vector, new_min_src_vector)
     graph[src_server_id] = new_min_src_vector
     graph[src_nei_key] = nei_vector
-    print(graph)
-    return 0
+    return bellman_ford(graph, src_server_id)
 
 # not sure if needed, this was used for a bellman ford algorithm assuming we know all values at compile/interpret time
 # this does not seem to be the case as we rely on other nodes in run time to give us all the information
@@ -80,7 +78,6 @@ def bellman_ford(graph, src_server_id):
                 else:
                     update_nei_vector.update({nei_nei_node: nei_node_cost})
             graph[nei] = update_nei_vector
-    print(graph)
     return graph
 
 def reduce_graph(graph):
