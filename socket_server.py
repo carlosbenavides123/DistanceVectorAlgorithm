@@ -43,7 +43,7 @@ class SocketServer(Thread):
                 self.server_application.connected_servers[server_id] = client
                 continue
             elif msg == "{quit}":
-                self.close_connection(client, (ip, port))
+                self.close_connection(client)
                 print("%s:%s terminated the connection"%(ip, port))
                 return
             else:
@@ -62,13 +62,10 @@ class SocketServer(Thread):
     #     for sock in self.clients:
     #         sock.send(msg)
 
-    def close_connection(self, client, addr):
+    def close_connection(self, client):
         try:
             self.send_message(client, "{quit}")
             client.close()
-            del self.clients[client]
-            del self.chat_application.map_ip_to_server[addr]
-            self.chat_application.connected_remote_hosts.remove(addr)
         except:
             return False
         return True

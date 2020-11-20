@@ -5,7 +5,7 @@ import collections
 #     z.update(y)    # modifies z with y's keys and values & returns None
 #     return z
 
-def update_routing_table(graph, src_server_id, src_nei_vector):
+def update_routing_table(graph, src_server_id, src_nei_vector, parents):
     src_nei_key = None
     for key in src_nei_vector:
         src_nei_key = key
@@ -41,11 +41,13 @@ def update_routing_table(graph, src_server_id, src_nei_vector):
 
         if nei_nei_node not in src_vector_keys:
             new_min_src_vector[nei_nei_node] = nei_nei_cost + src_to_nei_cost
+            parents[src_nei_key-1] = src_nei_key
         else:
             for src_vector_nei, src_vector_nei_cost in src_vector.items():
                 if src_vector_nei == nei_nei_node:
                     if src_vector_nei_cost > nei_nei_cost + src_to_nei_cost:
                         new_min_src_vector[src_vector_nei] = nei_nei_cost + src_to_nei_cost
+                        parents[src_nei_key-1] = src_nei_key
                     else:
                         new_min_src_vector[src_vector_nei] = src_vector_nei_cost
                     break
@@ -53,7 +55,7 @@ def update_routing_table(graph, src_server_id, src_nei_vector):
     # new_min_src_vector = merge_two_dicts(src_vector, new_min_src_vector)
     graph[src_server_id] = new_min_src_vector
     graph[src_nei_key] = nei_vector
-    return bellman_ford(graph, src_server_id)
+    return bellman_ford(graph, src_server_id), parents
 
 # not sure if needed, this was used for a bellman ford algorithm assuming we know all values at compile/interpret time
 # this does not seem to be the case as we rely on other nodes in run time to give us all the information

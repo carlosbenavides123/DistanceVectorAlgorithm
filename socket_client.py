@@ -57,7 +57,7 @@ class SocketClient(Thread):
             return False
         return True
 
-    def close(self, own_ip, own_port):
+    def close(self):
         if self.t:
             try:
                 self.killed = True

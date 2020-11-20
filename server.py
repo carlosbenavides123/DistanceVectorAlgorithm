@@ -30,11 +30,15 @@ class Server(cmd.Cmd):
 		self.server_port = 0
 
 		self.graph = collections.defaultdict(dict)
+		self.parents = [None] * 4
+		self.parents[self.server_id-1] = self.server_id
 
 		self.topology = topology
 		self.interval = int(interval)
 
 		self.all_server_details = []
+		self.not_listening_servers = set()
+
 		self.connected_servers = {}
 
 		self.amount_of_servers = 0
@@ -68,6 +72,11 @@ class Server(cmd.Cmd):
 			if server_ip == self.server_ip and server_port == self.server_port:
 				pass
 			else:
+				print("server id...", server_id)
+				if server_id in self.not_listening_servers:
+					print("oops")
+					print(self.not_listening_servers)
+					continue
 				socket_client = SocketClient(server_ip, server_port, self)
 				if socket_client.connect(self.server_id):
 					print("Successfully connected to %s:%s"%(server_ip, server_port))
@@ -85,8 +94,17 @@ class Server(cmd.Cmd):
 		print("do packets")
 
 	def do_display(self, line):
-		print("do display")
-		print(self.graph)
+		print('Destination ID    Next Hop ID       Cost')
+		f = '{:<15}   {:<15}      {:<5}' #format
+		src_vector = self.graph[self.server_id]
+
+		for i in range(1, len(self.all_server_details)+1):
+			if i == self.server_id:
+				print(f.format(*[i, i, 0]))
+			elif i not in src_vector:
+				print(f.format(*[i, "N/A", float("inf")]))
+			else:
+				print(f.format(*[i, self.parents[i-1], src_vector[i]]))
 
 	def do_disable(self, line):
 		print("do disable")
@@ -95,9 +113,17 @@ class Server(cmd.Cmd):
 		print("do crash")
 
 	def do_exit(self, line):
-		print("stopping tcp server connection")
-		self.socket_server.stop()
+		print("Exiting application...")
 		self.continue_broadcasting = False
+		for key, connected_server in self.connected_servers.items():
+			print(key)
+			if isinstance(connected_server, SocketClient):
+				print("sending socketclient quit...")
+				success = connected_server.close()	
+			else:
+				print("secnding socket client close...")
+				self.socket_server.close_connection(connected_server)
+		self.socket_server.stop()
 		return -1
 
 	def read_topology_conf(self):
@@ -137,8 +163,10 @@ class Server(cmd.Cmd):
 						cost = int(val_pos_3)
 						if cost == -1:
 							cost = float("inf")
+							self.not_listening_servers.add(neighbor_server_id)
 						graph[server_id].update({neighbor_server_id: cost})
 						graph[neighbor_server_id].update({server_id: cost})
+						self.parents[neighbor_server_id-1] = neighbor_server_id
 				count += 1
 
 		# update the state variables
@@ -146,16 +174,16 @@ class Server(cmd.Cmd):
 		self.graph = graph
 		print("initial routing table...", self.graph)
 
-	def update_topology_file_conf(self):
-		f = open(self.topology, "w+")
-		f.writelines(f"{self.amount_of_servers}\n")
-		f.writelines(f"{self.amount_of_neighbors}\n")
-		for nei in self.all_server_details:
-			f.writelines(" ".join(map(str, nei)) + "\n")
-		for node in self.graph:
-			for nei, cost in self.graph[node]:
-				f.writelines(str(node) + " " + str(nei) + " " + str(cost) + "\n")
-		f.close()
+	# def update_topology_file_conf(self):
+	# 	f = open(self.topology, "w+")
+	# 	f.writelines(f"{self.amount_of_servers}\n")
+	# 	f.writelines(f"{self.amount_of_neighbors}\n")
+	# 	for nei in self.all_server_details:
+	# 		f.writelines(" ".join(map(str, nei)) + "\n")
+	# 	for node in self.graph:
+	# 		for nei, cost in self.graph[node]:
+	# 			f.writelines(str(node) + " " + str(nei) + " " + str(cost) + "\n")
+	# 	f.close()
 		
 	def cron_broadcast_routing_update(self):
 		if self.continue_broadcasting:
@@ -170,14 +198,11 @@ class Server(cmd.Cmd):
 					self.socket_server.send_message(connected_server, message)
 
 	def cron_process_packet_queue(self):
-		print("cron")
 		if self.continue_broadcasting:
 			threading.Timer(0.1, self.cron_process_packet_queue).start()
 			if self.packet_queue:
-				print("yes")
 				nei_vector_data = self.packet_queue.popleft()
-				print("processing...", nei_vector_data)
-				self.graph = update_routing_table(self.graph, self.server_id, nei_vector_data)
+				self.graph, self.parents = update_routing_table(self.graph, self.server_id, nei_vector_data, self.parents)
 
 def check_positive_interval(interval):
 	try: 
