@@ -12,6 +12,7 @@ class SocketServer(Thread):
         self.killed = False
         self.start()
         self.clients = {}
+        self.server_id = ""
 
     def run(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,15 +43,18 @@ class SocketServer(Thread):
                 # initial message for when a client attempts to connect to server
                 self.server_application.connected_servers[server_id] = client
                 continue
-            elif msg == "{quit}":
+            elif msg.startswith("{quit}"):
+                _, server_id = msg.split("#")
                 self.close_connection(client)
-                print("%s:%s terminated the connection"%(ip, port))
+                print(f"Server id {server_id} {ip}:{port} terminated the connection")
                 return
             else:
                 self.server_application.rcv_packet_data(msg)
 
-    def send_message(self, client, message):
+    def send_message(self, client, message, server_id):
         try:
+            self.server_id = server_id
+            message = str(message) + "#" + str(server_id)
             client.send(message.encode())
         except:
             return False
@@ -64,7 +68,7 @@ class SocketServer(Thread):
 
     def close_connection(self, client):
         try:
-            self.send_message(client, "{quit}")
+            self.send_message(client, "{quit}", self.server_id)
             client.close()
         except:
             return False
@@ -72,4 +76,3 @@ class SocketServer(Thread):
 
     def stop(self):
         self.s.close()
-        time.sleep(0.3)

@@ -11,6 +11,7 @@ class SocketClient(Thread):
         self.t = None
         self.killed = False
         self.server_application = server_application
+        self.server_id = ""
 
     def connect(self, server_id):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,33 +27,33 @@ class SocketClient(Thread):
             pass
         return False
 
-
     def receive(self, client_socket, own_ip=None, own_port=None):
         while True:
             try:
                 msg = client_socket.recv(1024).decode()
-                if msg == "{quit}":
+                if msg.startswith("{quit}"):
                     client_socket.close()
+                    _, server_id = msg.split("#")
                     # if the server initiated the quit, then killed will still be false
                     if not self.killed:
                         self.killed = True
-                        del self.chat_application.map_ip_to_server[(self.host, str(self.port))]
-                        self.chat_application.connected_remote_hosts.remove((self.host, str(self.port)))
-                        print("%s:%s terminated the connection"%(self.host, self.port))
+                        print(f"Server id {server_id} {self.host}:{self.port} terminated the connection")
                     return
                 else:
                     self.server_application.rcv_packet_data(msg)
             except:
                 return
 
-    def send_message(self, message):
+    def send_message(self, message, server_id):
         if not self.connection:
             self.connect()
+        self.server_id = server_id
         if not self.connection:
             print("Was not able to connect to {self.host} {self.port}")
             return False
         try:
-            self.connection.sendall(message.encode())
+            message = str(message) + "#" + str(server_id)
+            self.connection.sendall( message.encode() )
         except:
             return False
         return True
@@ -61,7 +62,7 @@ class SocketClient(Thread):
         if self.t:
             try:
                 self.killed = True
-                self.send_message("{quit}")
+                self.send_message("{quit}", self.server_id)
                 self.t.join()
             except:
                 print("Error occured attempting to kill the thread.")
