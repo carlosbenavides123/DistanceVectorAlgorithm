@@ -143,10 +143,9 @@ class Server(cmd.Cmd):
 	def rcv_packet_data(self, msg):
 		try:
 			# dictionary message
-			print("rcv ppckt ", msg)
 			data, server_id  = msg.split("#")
 			server_id = int(server_id)
-			print(f"RECEIVED A MESSAGE FROM SERVER {server_id}")
+			print(f"RECEIVED A MESSAGE FROM SERVER {server_id} {data}")
 			data = eval(data)
 			# if server_id not in self.fallback_graph and self.server_id in data[server_id]:
 			# 	self.fallback_graph[self.server_id][server_id] = data[server_id][self.server_id]
@@ -204,7 +203,7 @@ class Server(cmd.Cmd):
 			self.print_command_result(False, ex)
 
 	def do_disable(self, line):
-		message = str(self.server_id) + " " + line + " " + "inf"
+		message = str(self.server_id) + " " + str(line) + " " + "inf"
 		self.do_update(message)
 
 	def do_crash(self, line):
@@ -215,11 +214,8 @@ class Server(cmd.Cmd):
 	def do_exit(self, line):
 		print("Exiting application...")
 		self.continue_broadcasting = False
-		for key, connected_server in self.connected_servers.items():
-			if isinstance(connected_server, SocketClient):
-				success = connected_server.close()	
-			else:
-				self.socket_server.close_connection(connected_server)
+		for connected_server_id, connected_server in self.connected_servers.items():
+			self.do_disable(connected_server_id)
 		self.socket_server.stop()
 		return -1
 
@@ -300,12 +296,15 @@ class Server(cmd.Cmd):
 			if self.packet_queue:
 				self.packet_count += 1
 				nei_vector_data = self.packet_queue.popleft()
-				new_graph, new_parents = update_routing_table(self.graph, self.server_id, nei_vector_data, self.parents)
+				new_graph, new_parents, reset = update_routing_table(self.graph, self.server_id, nei_vector_data, self.parents)
 				self.graph = new_graph
 				self.parents = new_parents
 
 				for nei_server_id in nei_vector_data:
 					self.server_id_packet_counter[nei_server_id] += 1
+				if reset:
+					print("resetting..")
+					self.packet_queue.clear()
 
 			if self.check_for_dead_server_packet_counter >= 100:
 				self.check_for_dead_servers()

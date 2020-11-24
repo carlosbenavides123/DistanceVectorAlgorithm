@@ -39,7 +39,6 @@ class SocketServer(Thread):
             except:
                 return
             if msg.startswith("connect"):
-                print("connect message", msg)
                 if "{" in msg:
                     msg = msg.split("{")[0]
                 _, server_id = msg.split(" ")

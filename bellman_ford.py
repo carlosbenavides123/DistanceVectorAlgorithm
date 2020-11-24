@@ -1,10 +1,5 @@
 import collections
 
-# def merge_two_dicts(x, y):
-#     z = x.copy()   # start with x's keys and values
-#     z.update(y)    # modifies z with y's keys and values & returns None
-#     return z
-
 def update_routing_table(graph, src_server_id, src_nei_vector, parents):
     # print(graph, src_server_id, src_nei_vector, parents)
     src_nei_key = None
@@ -37,7 +32,9 @@ def update_routing_table(graph, src_server_id, src_nei_vector, parents):
         if src_to_nei_cost == float("inf"):
             # raise error
             print("error src_to_nei_cost float inf")
-            return graph, parents
+            print("DEBUG src_vector", src_vector)
+            print("DEBUG nei_vector", src_nei_vector)
+            return graph, parents, True
 
     src_vector_keys = set([key for key in src_vector])
 
@@ -60,7 +57,8 @@ def update_routing_table(graph, src_server_id, src_nei_vector, parents):
     # new_min_src_vector = merge_two_dicts(src_vector, new_min_src_vector)
     graph[src_server_id] = new_min_src_vector
     graph[src_nei_key] = nei_vector
-    return graph, parents
+    # print(graph)
+    return graph, parents, False
     return bellman_ford(graph, src_server_id), parents
 
 # not sure if needed, this was used for a bellman ford algorithm assuming we know all values at compile/interpret time
@@ -86,36 +84,6 @@ def bellman_ford(graph, src_server_id):
                 else:
                     update_nei_vector.update({nei_nei_node: nei_node_cost})
             graph[nei] = update_nei_vector
+    print("recomputed graph", graph)
     return graph
 
-# def reduce_graph(graph):
-#     reduced_graph = []
-#     for node in graph:
-#         for nei, cost in graph[node].items():
-#             reduced_graph.append([node, nei, cost])
-#     return reduced_graph
-
-# def rebuild_graph(lst):
-    
-
-# def recompute_graph_with_fallback(src_server_id, deleted_nodes, fallback_graph):
-#     for node in deleted_nodes:
-#         if node in fallback_graph and src_server_id in fallback_graph[node]:
-#             del fallback_graph[node][src_server_id]
-#         if src_server_id in fallback_graph and node in fallback_graph[src_server_id]:
-#             del fallback_graph[src_server_id][node]
-#     parents = [] * 4
-#     dist=[float('inf')] * 4
-#     dist[src_server_id-1]=0
-#     reduced_graph = reduce_graph(fallback_graph)
-#     for _ in range(4):
-#         new_dist = dist[:]
-#         for u,v,w in reduced_graph:
-#             if new_dist[v-1] > dist[u-1] + w:
-#                 parents[v-1] = u-1
-#                 new_dist[v-1] = dist[u-1]+w
-#         if new_dist == dist:
-#             break
-#         dist = new_dist
-    
-#     return dist[src_server_id] if dist[dst] != float("inf") else -1
