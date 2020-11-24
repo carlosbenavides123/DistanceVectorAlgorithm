@@ -200,20 +200,8 @@ class Server(cmd.Cmd):
 			self.print_command_result(False, ex)
 
 	def do_disable(self, line):
-		server_id = int(line)
-		if server_id in self.connected_servers:
-			connected_server = self.connected_servers[server_id]
-			if isinstance(connected_server, SocketClient):
-				connected_server.send_message("{quit}", self.server_id)
-			else:
-				self.socket_server.send_message(connected_server, "{quit}", self.server_id)
-			if self.server_id in self.fallback_graph:
-				if server_id in self.fallback_graph[self.server_id]:
-					del self.fallback_graph[self.server_id][server_id]
-					del self.fallback_graph[server_id][server_id]
-			self.print_command_result(True)
-		else:
-			self.print_command_result(False, f"Server id {server_id} is not a neighbor.")
+		message = str(self.server_id) + " " + line + " " + "inf"
+		self.do_update(message)
 
 	def do_crash(self, line):
 		print("Crashing...")

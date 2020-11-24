@@ -49,13 +49,13 @@ class SocketServer(Thread):
                 print(f"Server id {server_id} {ip}:{port} terminated the connection")
                 return
             elif msg.startswith("{update}"):
-                print(msg)
                 _, server_1, server_2, cost = msg.split(" ")
                 if "#" in cost:
                     cost = cost.split("#")[0]
                 self.server_application.update_link_cost(int(server_1), int(server_2), int(cost))
                 if cost == "-1":
                     self.close_connection(client)
+                    print(f"Server id {server_1} {ip}:{port} terminated the connection")
             else:
                 self.server_application.rcv_packet_data(msg)
 
