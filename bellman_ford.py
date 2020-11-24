@@ -57,7 +57,6 @@ def update_routing_table(graph, src_server_id, src_nei_vector, parents):
                     else:
                         new_min_src_vector[src_vector_nei] = src_vector_nei_cost
                     break
-    print(5)
     # new_min_src_vector = merge_two_dicts(src_vector, new_min_src_vector)
     graph[src_server_id] = new_min_src_vector
     graph[src_nei_key] = nei_vector

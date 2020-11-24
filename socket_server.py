@@ -39,6 +39,9 @@ class SocketServer(Thread):
             except:
                 return
             if msg.startswith("connect"):
+                print("connect message", msg)
+                if "{" in msg:
+                    msg = msg.split("{")[0]
                 _, server_id = msg.split(" ")
                 # initial message for when a client attempts to connect to server
                 self.server_application.connected_servers[int(server_id)] = client

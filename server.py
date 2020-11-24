@@ -55,7 +55,6 @@ class Server(cmd.Cmd):
 		self.socket_server = SocketServer(self.server_ip, self.server_port, self)
 		self.connect_to_servers()
 
-
 		self.check_for_dead_server_packet_counter = 0
 		self.is_blocked = False
 		self.continue_broadcasting = True
@@ -144,9 +143,14 @@ class Server(cmd.Cmd):
 	def rcv_packet_data(self, msg):
 		try:
 			# dictionary message
+			print("rcv ppckt ", msg)
 			data, server_id  = msg.split("#")
-			print(f"RECEIVED A MESSAGE FROM SERVER {server_id} {data}")
-			data = eval(msg)
+			server_id = int(server_id)
+			print(f"RECEIVED A MESSAGE FROM SERVER {server_id}")
+			data = eval(data)
+			# if server_id not in self.fallback_graph and self.server_id in data[server_id]:
+			# 	self.fallback_graph[self.server_id][server_id] = data[server_id][self.server_id]
+			# 	self.fallback_graph[server_id][self.server_id] = data[server_id][self.server_id]
 			self.packet_queue.append(data)
 		except:
 			return
@@ -220,10 +224,13 @@ class Server(cmd.Cmd):
 		return -1
 
 	def print_command_result(self, success, error_msg=""):
-		if success:
+		if self.is_blocked:
+			return
+		if success and self._hist:
 			print(f"{self._hist[-1]} SUCCESS")
 		else:
-			print(f"{self._hist[-1]} ERROR: {error_msg}")
+			if self._hist:
+				print(f"{self._hist[-1]} ERROR: {error_msg}")
 
 	def read_topology_conf(self):
 		count = 0
@@ -311,19 +318,26 @@ class Server(cmd.Cmd):
 			nei_packets_count = self.server_id_packet_counter.copy()
 			self.server_id_packet_counter = {server_id: 0 for server_id in range(1, 5) if server_id != self.server_id}
 
+			will_fallback = False
 			for server_id, count in nei_packets_count.items():
 				if count < 3:
 					print("Lost server id ", server_id)
 					for key in self.graph:
 						if server_id in self.fallback_graph[key]:
 							del self.fallback_graph[key][server_id]
+							will_fallback = True
 					if server_id in self.fallback_graph:
 						del self.fallback_graph[server_id]
+					if server_id in self.connected_servers:
+						self.do_disable(str(server_id))
 					self.packet_queue.clear()
-			print("FALLBACK", self.fallback_graph)
 			self.graph = copy.deepcopy(self.fallback_graph)
+
+			for nei_server_id in self.connected_servers:
+				if nei_server_id in self.graph[self.server_id]:
+					message = str(self.server_id) + " " + str(nei_server_id) + " " + str(self.graph[self.server_id][nei_server_id])
+					self.do_update(message)
 			self.parents = self.fallback_parents
-			print(self.graph, "updated graph...")
 
 		self.check_for_dead_server_packet_counter = 0
 		self.is_blocked = False

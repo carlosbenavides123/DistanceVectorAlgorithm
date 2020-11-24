@@ -18,6 +18,7 @@ class SocketClient(Thread):
         try:
             print("Attempting to connect to %s:%s..."%(self.host, self.port))
             s.connect((self.host, self.port))
+            print("my server id is ", server_id)
             s.send(f"connect {server_id}".encode())
             self.connection = s
             self.t = Thread(target=self.receive, args=(s,))
