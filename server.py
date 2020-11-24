@@ -8,6 +8,7 @@ import socket
 import collections
 import datetime
 import sys
+import copy
 
 # UDFs
 from bellman_ford import bellman_ford, update_routing_table
@@ -47,7 +48,9 @@ class Server(cmd.Cmd):
 		self.amount_of_neighbors = len(self.all_server_details)
 
 		self.read_topology_conf()
-		self.fallback_data = self.graph.copy()
+
+		self.fallback_graph = copy.deepcopy(self.graph)
+		self.fallback_parents = self.parents[:]
 
 		self.socket_server = SocketServer(self.server_ip, self.server_port, self)
 		self.connect_to_servers()
@@ -66,32 +69,85 @@ class Server(cmd.Cmd):
 
 		self.server_id_packet_counter = {server_id: 0 for server_id in range(1, 5) if server_id != self.server_id}
 
+	# def flatten_graph(self):
+	# 	lst = []
+	# 	for key in self.graph:
+	# 		for k, v in self.graph[key]:
+	# 			lst.append((key, (k, v)))
+	# 	return lst
+
 	def do_update(self, line):
 		try:
-			_, server_1, server_2, cost = line.split(" ")
+			try:
+				server_1, server_2, cost = line.split(" ")
+			except:
+				self.print_command_result(False, "Bad input, please input 'update <current_server_id> <neighbor_server_id> <cost>!")
 			server_1 = int(server_1)
 			server_2 = int(server_2)
-			cost = float(cost)
-			if cost != float("inf") and cost != float("-inf"):
-				cost = int(cost)
+			if server_1 != self.server_id:
+				self.print_command_result(False, f"Cannot update {server_1} as server node {self.server_id}, this operation is not allowed.")
+				return
+			if server_2 not in self.graph[server_1]:
+				self.print_command_result(False, f"Cannot update {server_1} as server node {server_2} are not neighbors.")
+				return
 
-			if self.server_id in [server_1, server_2]:
-				if server_1 not in self.graph[server_2]:
-					self.print_command_result(False, "Cannot update links between non neighbors!")
+			try:
+				cost = float(cost)
+			except:
+				self.print_command_result(False, "Bad input for cost, please input a valid number for updating link cost!")
+
+			if type(cost) == float and cost > 0:
+				if cost != float("inf"):
+					cost = int(cost)
+					self.update_link_cost(server_1, server_2, cost)
+				else:
+					# update the links to be inf
+					cost = -1
+					self.update_link_cost(server_1, server_2, cost)
+				self.send_update_message(server_1, server_2, cost)
+				self.print_command_result(True)
+			else:
+				self.print_command_result(False, "Bad input for cost, please input a valid number for updating link cost!")
+				return
 		except Exception as ex:
 			self.print_command_result(False, ex)
+
+	def update_link_cost(self, server_1, server_2, cost):
+		if server_2 in self.graph[server_1]:
+			if cost != -1:
+				try:
+					self.graph[server_1][server_2] = cost
+					self.graph[server_2][server_1] = cost
+					self.fallback_graph[server_1][server_2] = cost
+					self.fallback_graph[server_2][server_1] = cost
+				except:
+					return False
+			elif cost == -1:
+				try:
+					del self.graph[server_1][server_2]
+					del self.graph[server_2][server_1]
+					del self.fallback_graph[server_1][server_2]
+					del self.fallback_graph[server_2][server_1]
+				except:
+					return False
+			return True
+		return False
+
+	def send_update_message(self, server_1, server_2, cost):
+		connected_server = self.connected_servers[server_2]
+		update_message = "{update}" + " " + str(server_1) + " " + str(server_2) + " " + str(cost)
+		if isinstance(connected_server, SocketClient):
+			connected_server.send_message(update_message, self.server_id)
+		else:
+			self.socket_server.send_message(connected_server, update_message, self.server_id)
 
 	def rcv_packet_data(self, msg):
 		try:
 			# dictionary message
 			data, server_id  = msg.split("#")
 			print(f"RECEIVED A MESSAGE FROM SERVER {server_id} {data}")
-			print("TEST")
 			data = eval(msg)
-			print("??????????")
 			self.packet_queue.append(data)
-			print(self.packet_queue)
-			print("###################")
 		except:
 			return
 
@@ -144,7 +200,6 @@ class Server(cmd.Cmd):
 			self.print_command_result(False, ex)
 
 	def do_disable(self, line):
-		print(line)
 		server_id = int(line)
 		if server_id in self.connected_servers:
 			connected_server = self.connected_servers[server_id]
@@ -152,12 +207,16 @@ class Server(cmd.Cmd):
 				connected_server.send_message("{quit}", self.server_id)
 			else:
 				self.socket_server.send_message(connected_server, "{quit}", self.server_id)
+			if self.server_id in self.fallback_graph:
+				if server_id in self.fallback_graph[self.server_id]:
+					del self.fallback_graph[self.server_id][server_id]
+					del self.fallback_graph[server_id][server_id]
 			self.print_command_result(True)
 		else:
 			self.print_command_result(False, f"Server id {server_id} is not a neighbor.")
 
 	def do_crash(self, line):
-		print("crashing...")
+		print("Crashing...")
 		self.do_exit("")
 		return -1
 
@@ -165,7 +224,6 @@ class Server(cmd.Cmd):
 		print("Exiting application...")
 		self.continue_broadcasting = False
 		for key, connected_server in self.connected_servers.items():
-			print(key)
 			if isinstance(connected_server, SocketClient):
 				success = connected_server.close()	
 			else:
@@ -226,17 +284,6 @@ class Server(cmd.Cmd):
 		self.all_server_details = all_server_details
 		self.graph = graph
 		print("initial routing table...", self.graph)
-
-	# def update_topology_file_conf(self):
-	# 	f = open(self.topology, "w+")
-	# 	f.writelines(f"{self.amount_of_servers}\n")
-	# 	f.writelines(f"{self.amount_of_neighbors}\n")
-	# 	for nei in self.all_server_details:
-	# 		f.writelines(" ".join(map(str, nei)) + "\n")
-	# 	for node in self.graph:
-	# 		for nei, cost in self.graph[node]:
-	# 			f.writelines(str(node) + " " + str(nei) + " " + str(cost) + "\n")
-	# 	f.close()
 		
 	def cron_broadcast_routing_update(self):
 		if self.continue_broadcasting:
@@ -258,7 +305,10 @@ class Server(cmd.Cmd):
 			if self.packet_queue:
 				self.packet_count += 1
 				nei_vector_data = self.packet_queue.popleft()
-				self.graph, self.parents = update_routing_table(self.graph, self.server_id, nei_vector_data, self.parents)
+				new_graph, new_parents = update_routing_table(self.graph, self.server_id, nei_vector_data, self.parents)
+				self.graph = new_graph
+				self.parents = new_parents
+
 				for nei_server_id in nei_vector_data:
 					self.server_id_packet_counter[nei_server_id] += 1
 
@@ -272,15 +322,21 @@ class Server(cmd.Cmd):
 			new_graph = self.graph.copy()
 			nei_packets_count = self.server_id_packet_counter.copy()
 			self.server_id_packet_counter = {server_id: 0 for server_id in range(1, 5) if server_id != self.server_id}
+
 			for server_id, count in nei_packets_count.items():
 				if count < 3:
-					print("lost server id ", server_id)
+					print("Lost server id ", server_id)
 					for key in self.graph:
-						if server_id in new_graph[key]:
-							del new_graph[key][server_id]
-					if server_id in new_graph:
-						del new_graph[server_id]
-			self.graph = new_graph
+						if server_id in self.fallback_graph[key]:
+							del self.fallback_graph[key][server_id]
+					if server_id in self.fallback_graph:
+						del self.fallback_graph[server_id]
+					self.packet_queue.clear()
+			print("FALLBACK", self.fallback_graph)
+			self.graph = copy.deepcopy(self.fallback_graph)
+			self.parents = self.fallback_parents
+			print(self.graph, "updated graph...")
+
 		self.check_for_dead_server_packet_counter = 0
 		self.is_blocked = False
 		print("Checking for dead servers completed...")

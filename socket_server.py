@@ -41,13 +41,21 @@ class SocketServer(Thread):
             if msg.startswith("connect"):
                 _, server_id = msg.split(" ")
                 # initial message for when a client attempts to connect to server
-                self.server_application.connected_servers[server_id] = client
+                self.server_application.connected_servers[int(server_id)] = client
                 continue
             elif msg.startswith("{quit}"):
                 _, server_id = msg.split("#")
                 self.close_connection(client)
                 print(f"Server id {server_id} {ip}:{port} terminated the connection")
                 return
+            elif msg.startswith("{update}"):
+                print(msg)
+                _, server_1, server_2, cost = msg.split(" ")
+                if "#" in cost:
+                    cost = cost.split("#")[0]
+                self.server_application.update_link_cost(int(server_1), int(server_2), int(cost))
+                if cost == "-1":
+                    self.close_connection(client)
             else:
                 self.server_application.rcv_packet_data(msg)
 
