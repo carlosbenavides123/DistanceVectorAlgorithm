@@ -53,7 +53,7 @@ class SocketClient(Thread):
 
     def send_message(self, message, server_id):
         if not self.connection:
-            self.connect()
+            self.connect(server_id)
         self.server_id = server_id
         if not self.connection:
             print("Was not able to connect to {self.host} {self.port}")
