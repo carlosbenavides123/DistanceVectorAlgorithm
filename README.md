@@ -39,7 +39,7 @@ python ./server.py -t server_2.txt -i 2
 
 python ./server.py -t server_3.txt -i 2
 
-todo:
+python ./server.py -t server_4.txt -i 2
 
 <!-- make the 
 server -t <topology-file-name> -i <routing-update-interval>
@@ -53,4 +53,4 @@ use the timer to update the server state every <interval> time -->
 
 <!-- create bellman ford algorithm, using the graph? or all_server_details? not sure yet -->
 
-figure out to wire everything together...
+find any bugs and fix them, i encountered some timing bugs that in runtime will be a immediate issue but over time the issue will fix, what I mean by this is that the data vectors might be out of date for like 10 seconds, so the display data may be out of whack, but after 10 seconds the expected result will occur.
