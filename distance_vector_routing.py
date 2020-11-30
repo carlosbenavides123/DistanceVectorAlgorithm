@@ -11,7 +11,7 @@ import sys
 import copy
 
 # UDFs
-from bellman_ford import bellman_ford, update_routing_table
+from update_routing_table import update_routing_table
 from socket_server import SocketServer
 from socket_client import SocketClient
 
@@ -67,13 +67,6 @@ class Server(cmd.Cmd):
 		self.packet_invocation_time = datetime.datetime.now()
 
 		self.server_id_packet_counter = {server_id: 0 for server_id in range(1, 5) if server_id != self.server_id}
-
-	# def flatten_graph(self):
-	# 	lst = []
-	# 	for key in self.graph:
-	# 		for k, v in self.graph[key]:
-	# 			lst.append((key, (k, v)))
-	# 	return lst
 
 	def do_update(self, line):
 		try:
@@ -147,9 +140,6 @@ class Server(cmd.Cmd):
 			server_id = int(server_id)
 			print(f"RECEIVED A MESSAGE FROM SERVER {server_id} {data}")
 			data = eval(data)
-			# if server_id not in self.fallback_graph and self.server_id in data[server_id]:
-			# 	self.fallback_graph[self.server_id][server_id] = data[server_id][self.server_id]
-			# 	self.fallback_graph[server_id][self.server_id] = data[server_id][self.server_id]
 			self.packet_queue.append(data)
 		except:
 			return

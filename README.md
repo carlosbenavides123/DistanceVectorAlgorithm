@@ -1,56 +1,20 @@
-1) Each server is supplied a topology file - used to build initial routing table
-2) This file is local and contains consts to each neighbor if available else infinity
-3) Each server can read the topology file for itself
+# How to run this application
 
-Structure of such topology file
+Please have python installed (preferrably python 3)
 
-<num-servers>
-<num-neighbors> - 
-<server-ID><server-IP><server-port>
-<server-ID1><server-ID2><cost>
+cd to the program directory
 
-Explanation
-<num-servers> - total number of servers
-<server-ID><server-ID1><server-ID2> - uuid for a server, assigned by you
-<cost> - cost of a given link pair
+to run server 1 for example...
 
-Line number             Line entry                                Comments
-1                       4                                         number of servers
-2                       3                                         number of edges or neighbors
-3                       1 192.168.0.169 4091                      server-id 1 and corresponding IP, port pair
+python ./distance_vector_routing.py -t server_1.txt -i 2
+
+-t <filename> specifies the filename for the initial file
+-i <number> specifies the interval to send updates to neighbors
+
+and to run server 2 (and so forth...)
+python ./distance_vector_routing.py -t server_2.txt -i 2
 
 
-basically
-the topo file will be null ? or hardcoded at the beginning... not sure
-when a server doesnt send updates for 3 consect turns, remove it from the table and network (make the cost infinite, not actually remove)
+# Contributions
 
-run like...
-server -t <topology-file-name> -i <routing-update-interval>
-topology-file-name: The topology file contains the initial topology configuration for the
-server, e.g., timberlake_init.txt. Please adhere to the format described in 3.1 for your topology
-files.
-routing-update-interval: It specifies the time interval between routing updates in seconds.
-port and server-id: They are written in the topology file. The server should find its port and
-server-id in the topology file without changing the entry format or adding any new entries.
-
-python ./server.py -t server_1.txt -i 2
-
-python ./server.py -t server_2.txt -i 2
-
-python ./server.py -t server_3.txt -i 2
-
-python ./server.py -t server_4.txt -i 2
-
-<!-- make the 
-server -t <topology-file-name> -i <routing-update-interval>
-functionality work -->
-
-<!-- be able to parse and use the topology file
-use the timer to update the server state every <interval> time -->
-
-<!-- need to figure out how to get self ip and port for own server without modifying the topo conf a lot -->
-<!-- add shell to run continuos commands -->
-
-<!-- create bellman ford algorithm, using the graph? or all_server_details? not sure yet -->
-
-find any bugs and fix them, i encountered some timing bugs that in runtime will be a immediate issue but over time the issue will fix, what I mean by this is that the data vectors might be out of date for like 10 seconds, so the display data may be out of whack, but after 10 seconds the expected result will occur.
+Carlos Benavides - created the interactive terminal (all commands), the reading of user input for when the server sets up (interval and filename), the TCP socket server and client, sending update to neighbors, neighbors handling updates, removing dead neighbors.

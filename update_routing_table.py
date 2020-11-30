@@ -59,31 +59,4 @@ def update_routing_table(graph, src_server_id, src_nei_vector, parents):
     graph[src_nei_key] = nei_vector
     # print(graph)
     return graph, parents, False
-    return bellman_ford(graph, src_server_id), parents
-
-# not sure if needed, this was used for a bellman ford algorithm assuming we know all values at compile/interpret time
-# this does not seem to be the case as we rely on other nodes in run time to give us all the information
-# we need for this project
-
-def bellman_ford(graph, src_server_id):
-    for nei in graph:
-        if nei == src_server_id:
-            continue
-        else:
-            update_nei_vector = {}
-            for other_nei_node in graph:
-                if other_nei_node == src_server_id or other_nei_node == nei:
-                    continue
-                if nei in graph[other_nei_node] and other_nei_node not in graph[nei]:
-                    update_nei_vector.update({other_nei_node: graph[other_nei_node][nei]})
-            for nei_nei_node, nei_node_cost in graph[nei].items():
-                if nei_nei_node == src_server_id and nei in graph[src_server_id]:
-                    update_nei_vector.update({nei_nei_node:
-                        min(graph[src_server_id][nei], nei_node_cost)
-                    })
-                else:
-                    update_nei_vector.update({nei_nei_node: nei_node_cost})
-            graph[nei] = update_nei_vector
-    print("recomputed graph", graph)
-    return graph
 
