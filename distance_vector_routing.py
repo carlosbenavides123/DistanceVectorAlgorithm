@@ -296,7 +296,7 @@ class Server(cmd.Cmd):
 					print("resetting..")
 					self.packet_queue.clear()
 
-			if self.check_for_dead_server_packet_counter >= self.interval * 50:
+			if self.check_for_dead_server_packet_counter >= self.interval * 5:
 				self.check_for_dead_servers()
 			threading.Timer(0.1, self.cron_process_packet_queue).start()
 
