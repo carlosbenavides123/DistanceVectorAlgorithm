@@ -6,14 +6,17 @@ cd to the program directory
 
 to run server 1 for example...
 
-python ./distance_vector_routing.py -t server_1.txt -i 2
+python3 ./distance_vector_routing.py -t server_1.txt -i 2
 
 -t <filename> specifies the filename for the initial file
 -i <number> specifies the interval to send updates to neighbors
 
 and to run server 2 (and so forth...)
-python ./distance_vector_routing.py -t server_2.txt -i 2
+python3 ./distance_vector_routing.py -t server_2.txt -i 2
 
+python3 ./distance_vector_routing.py -t server_3.txt -i 2
+
+python3 ./distance_vector_routing.py -t server_4.txt -i 2
 
 # Contributions
 

@@ -206,6 +206,8 @@ class Server(cmd.Cmd):
 		self.continue_broadcasting = False
 		for connected_server_id, connected_server in self.connected_servers.items():
 			self.do_disable(connected_server_id)
+			# fix for non-stopped threads?
+			connected_server.close()
 		self.socket_server.stop()
 		return -1
 
@@ -296,7 +298,7 @@ class Server(cmd.Cmd):
 					print("resetting..")
 					self.packet_queue.clear()
 
-			if self.check_for_dead_server_packet_counter >= self.interval * 5:
+			if self.check_for_dead_server_packet_counter >= self.interval * 50:
 				self.check_for_dead_servers()
 			threading.Timer(0.1, self.cron_process_packet_queue).start()
 
