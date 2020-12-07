@@ -20,4 +20,4 @@ python3 ./distance_vector_routing.py -t server_4.txt -i 2
 
 # Contributions
 
-Carlos Benavides - created the interactive terminal (all commands), the reading of user input for when the server sets up (interval and filename), the TCP socket server and client, sending update to neighbors, neighbors handling updates, removing dead neighbors.
+Carlos Benavides - created the interactive terminal (all commands), the reading of user input for when the server sets up (interval and filename), the TCP socket server and client, sending update to neighbors, neighbors handling updates, removing dead neighbors, recorded and uploaded video
