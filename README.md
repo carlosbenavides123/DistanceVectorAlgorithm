@@ -25,3 +25,5 @@ python3 ./distance_vector_routing.py -t server_4.txt -i 2
 Carlos Benavides - created the interactive terminal (all commands), the reading of user input for when the server sets up (interval and filename), the TCP socket server and client, sending update to neighbors, neighbors handling updates, removing dead neighbors, recorded and uploaded video
 
 Alfredo Sanchez - Test and run all the programs with the topology files altered to my own ip to verify that it is working as intended. Attempted to implement a solution to fix the initial delay problem once a second server updates the first server, however this may be due to innate problem the distance protocol has of lagging to update other servers. Furthermore, contributed to the README file of the programs structure.
+
+Matthew Estes - worked on reviewing the project and fixing bugs.
