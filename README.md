@@ -27,3 +27,5 @@ Carlos Benavides - created the interactive terminal (all commands), the reading 
 Alfredo Sanchez - Test and run all the programs with the topology files altered to my own ip to verify that it is working as intended. Attempted to implement a solution to fix the initial delay problem once a second server updates the first server, however this may be due to innate problem the distance protocol has of lagging to update other servers. Furthermore, contributed to the README file of the programs structure.
 
 Matthew Estes - worked on reviewing the project and fixing bugs.
+
+Alan Garcia - pointed out a bug for the socket client so the socket client can connect to the server. Attempted to figure out how to implement the step command and the packets command, but group member figure it out. Tried to figure out the delay problem for updating the cost of a node when the cost was being updated.
